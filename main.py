@@ -5,7 +5,7 @@ import openai
 import psycopg2
 
 # Set up the bot and OpenAI API credentials
-bot_token = '6092758960:AAEs2EQI2YTmVfkq_cHrbBjmy7wy4w2WFnw'
+bot_token = '5968554956:AAGNPB8pXT8jMQ15udAHiTCNavLnFWVvhiY'
 api_key = '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'
 
 logging.basicConfig(level=logging.INFO)
