@@ -32,14 +32,14 @@ async def start_cmd(message: types.Message):
         last_name = user.last_name
 
         # Check if the user is already in the database
-        cursor.execute("SELECT * FROM test_users WHERE user_id = %s", (user_id,))
+        cursor.execute("SELECT * FROM bot_users WHERE user_id = %s", (user_id,))
         result = cursor.fetchone()
         if result:
             # User is already in the database, do nothing
             pass
         else:
             # User is not in the database, insert the user into the bot_users table
-            cursor.execute("INSERT INTO test_users (user_id, username, first_name, last_name) VALUES (%s, %s, %s, %s)", (user_id, username, first_name, last_name))
+            cursor.execute("INSERT INTO bot_users (user_id, username, first_name, last_name) VALUES (%s, %s, %s, %s)", (user_id, username, first_name, last_name))
 
         # Commit the transaction
         conn.commit()
