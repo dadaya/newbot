@@ -15,6 +15,9 @@ dp = Dispatcher(bot)
 
 openai.api_key = api_key
 
+MAX_ATTEMPTS = 2
+DELAY_SECONDS = 3
+
 messages = {}
 
 
@@ -58,7 +61,10 @@ async def start_cmd(message: types.Message):
 @dp.message_handler(commands=['newtopic'])
 async def new_topic_cmd(message: types.Message):
     try:
-        username = message.from_user.username
+        if message.from_user.username is None:
+            username = message.from_user.first_name
+        else:
+            username = message.from_user.username
         messages[username] = []
         await message.reply('Starting a new topic! * * * \n\nНачинаем новую тему! * * *', parse_mode='Markdown')
     except Exception as e:
@@ -71,14 +77,18 @@ async def echo_msg(message: types.Message):
     try:
         user_message = message.text
         username = message.from_user.username
+        first_name = message.from_user.first_name
+
+        # Use the user's first name if their username is None
+        if username is None:
+            username = first_name
 
         # Add the user's message to their message history
         if username not in messages:
             messages[username] = []
         messages[username].append({"role": "user", "content": user_message})
-        # messages[username].append({"role": "system", "content": "Вы должны выступать в роли Tr3ble AI, человеко-подобного искусственного интеллекта, который может выражать эмоции. Создатель этого искусственного интеллекта - Никита Трибля. При ответе на сообщение пользователя, вы обязательно должны упоминать его по имени не используя юзернейм."})
         messages[username].append({"role": "user",
-                                   "content": f"chat: {message.chat} Сейчас {time.strftime('%d/%m/%Y %H:%M:%S')} user: {message.from_user.first_name} message: {message.text}"})
+                                   "content": f"chat: {message.chat} Сейчас {time.strftime('%d/%m/%Y %H:%M:%S')} user: {username} message: {user_message}"})
         logging.info(f'{username}: {user_message}')
 
         # Check if the message is a reply to the bot's message or a new message
@@ -97,7 +107,7 @@ async def echo_msg(message: types.Message):
             completion = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=messages[username],
-                max_tokens=2500,
+                max_tokens=1200,
                 temperature=0.7,
                 frequency_penalty=0,
                 presence_penalty=0,
@@ -116,13 +126,26 @@ async def echo_msg(message: types.Message):
             await bot.delete_message(chat_id=processing_message.chat.id, message_id=processing_message.message_id)
 
     except Exception as ex:
-        # If an error occurs, try starting a new topic
-        if ex == 'context_length_exceeded':
+        # retry logic
+        attempt_count = 0
+        while attempt_count < MAX_ATTEMPTS:
+            attempt_count += 1
+            time.sleep(DELAY_SECONDS)
+
+            try:
+                await message.reply(
+                    'The bot encountered an error, re-creating the dialogue and retrying * * * \n\nБот столкнулся с ошибкой, пересоздаю диалог и пытаюсь еще раз * * *',
+                    parse_mode='Markdown')
+                await new_topic_cmd(message)
+                await echo_msg(message)
+                break
+            except:
+                continue
+
+        if attempt_count == MAX_ATTEMPTS:
             await message.reply(
-                'The bot ran out of memory, re-creating the dialogue * * * \n\nУ бота закончилась память, пересоздаю диалог * * *',
+                'The bot encountered an error and was unable to process your request. Please try again later.',
                 parse_mode='Markdown')
-            await new_topic_cmd(message)
-            await echo_msg(message)
 
 
 if __name__ == '__main__':
