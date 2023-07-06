@@ -6,7 +6,7 @@ from aiogram.utils import executor
 logging.basicConfig(level=logging.INFO)
 
 # Replace YOUR_TOKEN with your actual bot token
-bot = Bot(token='5968554956:AAGNPB8pXT8jMQ15udAHiTCNavLnFWVvhiY')
+bot = Bot(token='5968554956:TOKEN')
 dp = Dispatcher(bot)
 
 # Handler for incoming messages
